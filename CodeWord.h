@@ -1,12 +1,5 @@
-/*
- * CodeWord.h
- *
- *  Created on: 2015年12月15日
- *      Author: ZENG
- */
-
-#ifndef BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_CODEWORD_H_
-#define BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_CODEWORD_H_
+#ifndef BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC_3_1_CODEWORD_H_
+#define BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC_3_1_CODEWORD_H_
 
 #include "CommonLibs.h"
 
@@ -30,8 +23,6 @@ public: // temporary variables
   double mU;
   double mU2;
   double mV2;
-private:
-  double mArpha = 0.1;
 public:
   cCodeWord();
   ~cCodeWord();
@@ -41,6 +32,4 @@ public:
   void fUpdate();
 };
 
-
-
-#endif /* BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_CODEWORD_H_ */
+#endif
