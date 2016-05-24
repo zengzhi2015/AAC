@@ -1,33 +1,30 @@
-/*
- * AACSEG.h
- *
- *  Created on: 2015年12月15日
- *      Author: ZENG
- */
-
-#ifndef BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_AACSEG_H_
-#define BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_AACSEG_H_
+#ifndef BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC_3_1_AACSEG_H_
+#define BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC_3_1_AACSEG_H_
 
 #include "CodeBook.h"
+#include "SeedFill.h"
 
 class cAACSEG {
-private:
+public:
   Mat mImage;
   Mat mRaw;
   Mat mResult;
+  Mat mCst;
+  Mat mRMOD;
   cCodeBook *mModel;
-private:
+public:
   int mH;
   int mW;
   int mMAX;
   bool mInitialized = false;
   int mFrame = 0;
-  int mTraining = 250; // Modify the number of training frames if nassasary
   RNG rng;
+public: // Parameters
+  int mTraining = 250;
 public:
   cAACSEG();
   ~cAACSEG();
-private:
+public:
   void fInitialize(const Mat &BGR);
   void fSeedfill(Mat &Gray, int filterSize, bool removePos);
   void fPostProc(Mat &Mask);
@@ -37,4 +34,4 @@ public:
 
 
 
-#endif /* BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_AACSEG_H_ */
+#endif
