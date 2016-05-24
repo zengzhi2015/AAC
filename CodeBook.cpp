@@ -1,13 +1,6 @@
-/*
- * CodeBook.cpp
- *
- *  Created on: 2015年12月15日
- *      Author: ZENG
- */
-
 #include "CodeBook.h"
 
-cCodeBook::cCodeBook() { // Setting parameters
+cCodeBook::cCodeBook() {
   ;
 }
 
@@ -42,12 +35,56 @@ double cCodeBook::fCalculatePsiF() {
     }
   }
   mCst = MIN((sqrt(m)-1)/2,0.1);
+
   return mCst;
+}
+
+void cCodeBook::fUpdateBufffer(bool seg, bool vote) {
+  if(seg == 0 && vote == 0) {
+    mFP = mFP << 1;
+    mFN = mFN << 1;
+    mFP[20] = 0;
+    mFN[20] = 0;
+  }
+  if(seg == 1 && vote == 0) {
+    mFP = mFP << 1; mFP[0] = 1;
+    mFN = mFN << 1;
+    mFP[20] = 0;
+    mFN[20] = 0;
+  }
+  if(seg == 1 && vote == 1) {
+    mFP = mFP << 1;
+    mFN = mFN << 1;
+    mFP[20] = 0;
+    mFN[20] = 0;
+  }
+  if(seg == 0 && vote == 1) {
+    mFP = mFP << 1;
+    mFN = mFN << 1; mFN[0] = 1;
+    mFP[20] = 0;
+    mFN[20] = 0;
+  }
+}
+
+double cCodeBook::fCalculateRMODTN() {
+  double rate_mod;
+  rate_mod = exp(-(double)mFN.count());
+
+  return rate_mod;
+}
+
+double cCodeBook::fCalculateRMODFP() {
+  double rate_mod;
+  rate_mod = (double)mFP.count()/20.0;
+  rate_mod = 1 + rate_mod*rate_mod*2;
+  rate_mod = rate_mod*exp(-(double)mFN.count());
+
+  return rate_mod;
 }
 
 void cCodeBook::fFilter() {
   if(!mCodeBook.empty()) {
-    while(mNofP > mTn) {
+    while(mNofP > 25) {
       int tRand = rand()%mNofP;
       int tSum = 0;
       list<cCodeWord>::iterator it = mCodeBook.begin();
