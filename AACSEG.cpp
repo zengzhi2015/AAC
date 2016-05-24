@@ -97,7 +97,7 @@ void cAACSEG::fProcess(const Mat &BGR, Mat &BIN) {
       }
       if(*pRaw == 255 && *pTemp == 255) {
         pModel->fUpdateBufffer(1,1);
-        if(rng.uniform(0.,1.) <= mTPAddRateConst) {
+        if(rng.uniform(0.,1.) <= 0.0002) {
           pModel->fUpdateBook(*pImage,*(pImage+1),*(pImage+2));
         }
       }
