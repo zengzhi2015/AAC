@@ -1,14 +1,7 @@
-/*
- * AACSEG.cpp
- *
- *  Created on: 2015年12月15日
- *      Author: ZENG
- */
-
 #include "AACSEG.h"
 
 cAACSEG::cAACSEG() {
-  ;
+  mModel = NULL;
 }
 
 cAACSEG::~cAACSEG() {
@@ -19,11 +12,12 @@ void cAACSEG::fInitialize(const Mat &BGR) {
   mH = BGR.rows;
   mW = BGR.cols;
   mMAX = mH*mW;
-  // ////////////
   mImage.create(BGR.size(),CV_8UC3);
   mRaw.create(BGR.size(),CV_8UC1);
   mResult.create(BGR.size(),CV_8UC1);
   mModel = new cCodeBook[mMAX];
+  mCst.create(BGR.size(),CV_8UC1);
+  mRMOD.create(BGR.size(),CV_8UC1);
   mInitialized = true;
 }
 
@@ -33,11 +27,13 @@ void cAACSEG::fProcess(const Mat &BGR, Mat &BIN) {
     fInitialize(BGR);
   }
   BGR.copyTo(mImage);
-  uchar *pImage = mImage.data;
-  uchar *pRaw = mRaw.data;
-  uchar *pResult = mResult.data;
-  cCodeBook *pModel = mModel;
+  uchar *pImage;
+  uchar *pRaw;
+  uchar *pResult;
+  cCodeBook *pModel;
   if(mFrame <= mTraining) { // training
+    pImage = mImage.data;
+    pModel = mModel;
     for (int i = 0; i < mMAX; ++i) {
       pModel->fCheckBook(*pImage,*(pImage+1),*(pImage+2));
       pModel->fUpdateBook(*pImage,*(pImage+1),*(pImage+2));
@@ -45,8 +41,14 @@ void cAACSEG::fProcess(const Mat &BGR, Mat &BIN) {
       pImage += 3;
       pModel += 1;
     }
+    mRaw = mRaw*0;
+    mRaw.copyTo(mResult);
   }
   else { // Seg
+    pImage = mImage.data;
+    pRaw = mRaw.data;
+    pResult = mResult.data;
+    pModel = mModel;
     for (int i = 0; i < mMAX; ++i) {
       if(pModel->fCheckBook(*pImage,*(pImage+1),*(pImage+2))) { // is matched
         *pRaw = 0;
@@ -58,53 +60,78 @@ void cAACSEG::fProcess(const Mat &BGR, Mat &BIN) {
       pRaw += 1;
       pModel += 1;
     }
-    // post
-    mRaw.copyTo(mResult);
-    fPostProc(mResult);
-    // feedback
+
+    Mat Temp;
+    mRaw.copyTo(Temp);
+    sSeedFill postproc;
+    postproc.fAutoPost(Temp,Temp);
     pImage = mImage.data;
     pRaw = mRaw.data;
-    pResult = mResult.data;
+    uchar *pTemp = Temp.data;
     pModel = mModel;
-    for (int i = 0; i < mMAX; i++) {
-      if(*pRaw == 0 && *pResult == 0) {
-        if(rng.uniform(0.,1.) <= 1/15) {
-          pModel->fUpdateBook(*pImage,*(pImage+1),*(pImage+2));
-        }
-      }
-      if(*pRaw == 255 && *pResult == 0) {
-        if(rng.uniform(0.,1.) <= pModel->fCalculatePsiF()) {
-          pModel->fUpdateBook(*pImage,*(pImage+1),*(pImage+2));
-        }
-      }
+    uchar *pmCst = mCst.data;
+    mCst = mCst*0;
+    uchar *pRMOD = mRMOD.data;
+    mRMOD = mRMOD*0;
 
-      if(*pRaw == 255 && *pResult == 255) {
-        if(rng.uniform(0.,1.) <= 0.0002) {
+    double rate_mod;
+    for (int i = 0; i < mMAX; i++) {
+      if(*pRaw == 0 && *pTemp == 0) {
+        pModel->fUpdateBufffer(0,0);
+        rate_mod = pModel->fCalculateRMODTN();
+        rate_mod = MAX(rate_mod,0);
+        *pRMOD = MIN(255,127.0 * rate_mod);
+        if(rng.uniform(0.,1.) <= 0.01*rate_mod) {
           pModel->fUpdateBook(*pImage,*(pImage+1),*(pImage+2));
         }
+      }
+      if(*pRaw == 255 && *pTemp == 0) {
+        pModel->fUpdateBufffer(1,0);
+        rate_mod = pModel->fCalculateRMODFP();
+        rate_mod = MAX(rate_mod,0);
+        *pRMOD = MIN(255,127.0 * rate_mod);
+        if(rng.uniform(0.,1.) <= pModel->fCalculatePsiF()*rate_mod) {
+          pModel->fUpdateBook(*pImage,*(pImage+1),*(pImage+2));
+        }
+        *pmCst = MIN(255,1000*pModel->mCst);
+      }
+      if(*pRaw == 255 && *pTemp == 255) {
+        pModel->fUpdateBufffer(1,1);
+        if(rng.uniform(0.,1.) <= mTPAddRateConst) {
+          pModel->fUpdateBook(*pImage,*(pImage+1),*(pImage+2));
+        }
+      }
+      if(*pRaw == 0 && *pTemp == 255) {
+        pModel->fUpdateBufffer(0,1);
       }
 
       pImage += 3;
       pRaw += 1;
-      pResult += 1;
+      pTemp += 1;
       pModel += 1;
+      pmCst += 1;
+      pRMOD += 1;
     }
-  }
-  mResult.copyTo(BIN);
 
-  imshow("mImage", mImage);
-  imshow("mResult", mResult);
+    mResult.copyTo(BIN);
+    Temp.copyTo(mResult);
+    fPostProc(mResult);
+
+  }
+
 }
 
 void cAACSEG::fPostProc(Mat &Mask) {
   int H = Mask.rows;
   int W = Mask.cols;
-  int size = W*H/330;
-  medianBlur(Mask, Mask, 5);
-  fSeedfill(Mask, size*2, false);
+  int size = W*H/500;
+
+  medianBlur(Mask, Mask, 3);
   erode(Mask,Mask,Mat(),Point(-1,-1),1);
   fSeedfill(Mask, size, true);
   dilate(Mask,Mask,Mat(),Point(-1,-1),1);
+  medianBlur(Mask, Mask, 3);
+
 }
 
 void cAACSEG::fSeedfill(Mat &Gray, int filterSize, bool removePos) {
@@ -141,43 +168,43 @@ void cAACSEG::fSeedfill(Mat &Gray, int filterSize, bool removePos) {
           int curX = curPixel.second;
           *((int*)lableImg.data + curY*W + curX) = label;
           sum += 1;
-          neighborPixels.pop();
+          neighborPixels.pop() ;
           if(curX==0) {
             if(curY==0) {
               if(*((int*)lableImg.data + curY*W + curX+1) == 1) {
-                neighborPixels.push(pair<int,int>(curY, curX+1));
+                neighborPixels.push(pair<int,int>(curY, curX+1)) ;
               }
               if(*((int*)lableImg.data + (curY+1)*W + curX) == 1) {
-                neighborPixels.push(std::pair<int,int>(curY+1, curX));
+                neighborPixels.push(std::pair<int,int>(curY+1, curX)) ;
               }
             }
             if(curY==H-1) {
               if(*((int*)lableImg.data + curY*W + curX+1) == 1) {
-                neighborPixels.push(pair<int,int>(curY, curX+1));
+                neighborPixels.push(pair<int,int>(curY, curX+1)) ;
               }
               if(*((int*)lableImg.data + (curY-1)*W + curX) == 1) {
-                neighborPixels.push(pair<int,int>(curY-1, curX));
+                neighborPixels.push(pair<int,int>(curY-1, curX)) ;
               }
             }
             if((curY<H-1)&(curY>0)) {
               if(*((int*)lableImg.data + curY*W + curX+1) == 1) {
-                neighborPixels.push(pair<int,int>(curY, curX+1));
+                neighborPixels.push(pair<int,int>(curY, curX+1)) ;
               }
               if(*((int*)lableImg.data + (curY-1)*W + curX) == 1) {
-                neighborPixels.push(pair<int,int>(curY-1, curX));
+                neighborPixels.push(pair<int,int>(curY-1, curX)) ;
               }
               if(*((int*)lableImg.data + (curY+1)*W + curX) == 1) {
-                neighborPixels.push(std::pair<int,int>(curY+1, curX));
+                neighborPixels.push(std::pair<int,int>(curY+1, curX)) ;
               }
             }
           }
           if(curX==W-1) {
             if(curY==0) {
               if(*((int*)lableImg.data + curY*W + curX-1) == 1) {
-                neighborPixels.push(pair<int,int>(curY, curX-1));
+                neighborPixels.push(pair<int,int>(curY, curX-1)) ;
               }
               if(*((int*)lableImg.data + (curY+1)*W + curX) == 1) {
-                neighborPixels.push(std::pair<int,int>(curY+1, curX));
+                neighborPixels.push(std::pair<int,int>(curY+1, curX)) ;
               }
             }
             if(curY==H-1) {
@@ -190,7 +217,7 @@ void cAACSEG::fSeedfill(Mat &Gray, int filterSize, bool removePos) {
             }
             if((curY<H-1)&(curY>0)) {
               if(*((int*)lableImg.data + curY*W + curX-1) == 1) {
-                neighborPixels.push(pair<int,int>(curY, curX-1));
+                neighborPixels.push(pair<int,int>(curY, curX-1)) ;
               }
               if(*((int*)lableImg.data + (curY-1)*W + curX) == 1) {
                 neighborPixels.push(pair<int,int>(curY-1, curX)) ;
