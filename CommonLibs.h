@@ -1,17 +1,11 @@
-/*
- * CommonLib.h
- *
- *  Created on: 2015年12月15日
- *      Author: ZENG
- */
-
-#ifndef BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_COMMONLIBS_H_
-#define BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_COMMONLIBS_H_
+#ifndef BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC_3_1_COMMONLIBS_H_
+#define BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC_3_1_COMMONLIBS_H_
 
 #include <opencv2/opencv.hpp>
 #include "opencv2/core/core.hpp"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <bitset>
 #include "cv.h"
 #include "highgui.h"
 #include "imgproc.hpp"
@@ -22,13 +16,17 @@
 #include <cstring>
 #include <string>
 #include <sstream>
-#include <VTKInit.h>
 #include <list>
 #include <vector>
 #include <map>
 #include <stack>
+#include <error.h>
+#include <time.h>
 
 using namespace std;
 using namespace cv;
 
-#endif /* BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_COMMONLIBS_H_ */
+#define ARRAY_DIM1_LEN(array) sizeof(array)/sizeof(array[0])
+#define ARRAY_DIM2_LEN(array) sizeof(array[0])/sizeof(array[0][0])
+
+#endif
