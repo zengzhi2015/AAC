@@ -1,10 +1,3 @@
-/*
- * CodeWord.cpp
- *
- *  Created on: 2015年12月15日
- *      Author: ZENG
- */
-
 #include "CodeWord.h"
 
 cCodeWord::cCodeWord() {
@@ -16,7 +9,7 @@ cCodeWord::~cCodeWord() {
 }
 
 void cCodeWord::fInitialize(double b, double g, double r, double r2_init, double l2_inite) {
-  mCb = b; // RGB
+  mCb = b;
   mCg = g;
   mCr = r;
   double tLP = sqrt(b*b+g*g+r*r);
@@ -46,28 +39,25 @@ bool cCodeWord::fCheckMatch(double b, double g, double r) {
 }
 
 void cCodeWord::fUpdate() {
-  mCb += mCPb * mArpha;
-  mCg += mCPg * mArpha;
-  mCr += mCPr * mArpha;
-  if(mU2*4>mL2||mV2*4>mR2) {
-    if(mU >= 0) {
-      mDb += (mCPb - mDb) * mArpha;
-      mDg += (mCPg - mDg) * mArpha;
-      mDr += (mCPr - mDr) * mArpha;
-    }
-    else {
-      mDb -= (mCPb + mDb) * mArpha;
-      mDg -= (mCPg + mDg) * mArpha;
-      mDr -= (mCPr + mDr) * mArpha;
-    }
+  mCb += mCPb * 0.1;
+  mCg += mCPg * 0.1;
+  mCr += mCPr * 0.1;
+  double temp_L = sqrt(mL2);
+  if(mU >= 0) {
+    mDb = mDb*temp_L + (mCPb - mDb*temp_L) * 0.1;
+    mDg = mDg*temp_L + (mCPg - mDg*temp_L) * 0.1;
+    mDr = mDr*temp_L + (mCPr - mDr*temp_L) * 0.1;
+  }
+  else {
+    mDb = mDb*temp_L - (mCPb - mDb*temp_L) * 0.1;
+    mDg = mDg*temp_L - (mCPg - mDg*temp_L) * 0.1;
+    mDr = mDr*temp_L - (mCPr - mDr*temp_L) * 0.1;
   }
   double tLD = sqrt(mDb*mDb + mDg*mDg + mDr*mDr);
   mDb /= tLD;
   mDg /= tLD;
   mDr /= tLD;
-  mR2 += (9*mV2 - mR2) * mArpha; mR2 = MAX(125,MIN(400,mR2));
-  mL2 += (9*mU2 - mL2) * mArpha; mL2 = MAX(125,MIN(400,mL2));
+  mR2 += (9*mV2 - mR2) * 0.1; mR2 = MAX(125,MIN(1600,mR2));
+  mL2 += (9*mU2 - mL2) * 0.1; mL2 = MAX(125,MIN(10000,mL2));
   mN += 1;
 }
-
-
