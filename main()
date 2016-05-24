@@ -1,38 +1,12 @@
-/*
- * main.cpp
- *
- *  Created on: 2015年12月15日
- *      Author: ZENG
- */
-
-#include "CommonLibs.h"
+#include "Framework.h"
 
 int main() {
 
-  cout << "Using OpenCV " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << std::endl;
-  cAACSEG *pCBSEG;
-  pCBSEG = new cAACSEG;
+  cFramework FW;
+  FW.imageFolder = "D:\\input\\";
+  FW.imageNumRule = "in%06d.jpg";
 
-  for(int frameNumber = 1; frameNumber <= 30000; frameNumber++) {
-
-    char* path = new char[128];
-    sprintf(path, "D:\\Researches on Change Detection\\Datasets\\CDnet2014\\dataset2014\\dataset\\dynamicBackground\\canoe\\input\\in%06d.jpg",frameNumber);
-    Mat img_input = imread(path, CV_LOAD_IMAGE_COLOR);
-
-    if (img_input.empty())
-      break;
-
-    Mat img_mask;
-    img_mask.create(img_input.size(),CV_8UC1);
-    pCBSEG->fProcess(img_input, img_mask);
-
-    waitKey(1);
-  }
-
-  delete pCBSEG;
-  cvDestroyAllWindows();
+  FW.BackgroundSubtraction();
 
   return 0;
 }
-
-
