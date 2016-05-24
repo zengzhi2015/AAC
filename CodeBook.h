@@ -1,27 +1,24 @@
-/*
- * CodeBook.h
- *
- *  Created on: 2015年12月15日
- *      Author: ZENG
- */
-
-#ifndef BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_CODEBOOK_H_
-#define BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_CODEBOOK_H_
+#ifndef BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC_3_1_CODEBOOK_H_
+#define BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC_3_1_CODEBOOK_H_
 
 #include "CodeWord.h"
 
 class cCodeBook {
-private:
+public:
   list<cCodeWord> mCodeBook;
-private:
-  double mTn = 25;
 public: // temporary variable
-  int mNofP = 0;
+  int mNofP = 0; // Number of population
   double mR2_AVR;
   double mL2_AVR;
   double mCst;
   list<cCodeWord>::iterator mMatched;
   bool mIsMatched;
+public:
+  bitset<64> mFN;
+  bitset<64> mFP;
+  void fUpdateBufffer(bool seg, bool vote);
+  double fCalculateRMODTN();
+  double fCalculateRMODFP();
 private:
   void fCalculateAVR();
   void fFilter();
@@ -34,6 +31,4 @@ public:
   void fUpdateBook(double b, double g, double r);
 };
 
-
-
-#endif /* BACKGROUNDSUBTRACTION_C_CODEBOOK_AAC3_0_CODEBOOK_H_ */
+#endif
